@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
 
-<AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.Principal_Docente">
+<AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.Principal_Docente">
    <children>
       <SplitPane dividerPositions="0.18481375358166188" layoutX="81.0" layoutY="103.0" prefHeight="400.0" prefWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <items>
@@ -54,7 +61,7 @@
                                        <children>
                                           <Text fx:id="errorText" strokeType="OUTSIDE" strokeWidth="0.0" wrappingWidth="174.13671875" />
                                        </children></VBox>
-                                    <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="185.0" text="Reportar problema" />
+                                    <Button mnemonicParsing="false" onMouseClicked="#ClicReportarProblema" prefHeight="25.0" prefWidth="185.0" text="Reportar problema" />
                                     <Button contentDisplay="CENTER" mnemonicParsing="false" onMouseClicked="#Logout" prefHeight="25.0" prefWidth="185.0" text="Cerrar sesión" />
                                  </children>
                               </VBox>
@@ -84,7 +91,7 @@
                               </TableView>
                               <HBox prefHeight="24.0" prefWidth="546.0" spacing="10.0">
                                  <children>
-                                    <Button mnemonicParsing="false" text="Consultar expediente">
+                                    <Button mnemonicParsing="false" onMouseClicked="#ClicConsultarExpediente" text="Consultar expediente">
                                        <HBox.margin>
                                           <Insets />
                                        </HBox.margin>
@@ -109,14 +116,15 @@
                               </Label>
                               <TableView fx:id="tbvArchivosSubidos" prefHeight="248.0" prefWidth="791.0">
                                  <columns>
-                                    <TableColumn fx:id="tcNombreArchivo" prefWidth="295.0" text="Nombre" />
-                                    <TableColumn fx:id="tcDescripcion" prefWidth="495.0" text="Descripcion" />
+                                    <TableColumn fx:id="tcNombreArchivo" prefWidth="439.0" text="Nombre" />
+                                    <TableColumn fx:id="tcTipo" prefWidth="189.0" text="Tipo" />
+                                    <TableColumn fx:id="tcTamanio" prefWidth="162.0" text="Tamaño" />
                                  </columns>
                               </TableView>
                               <HBox alignment="CENTER_LEFT" prefHeight="20.0" prefWidth="546.0" spacing="10.0">
                                  <children>
                                     <Button mnemonicParsing="false" onMouseClicked="#irPantallaSubirArchivos" text="Subir archivo" />
-                                    <Button mnemonicParsing="false" text="Eliminar archivo" />
+                                    <Button mnemonicParsing="false" onMouseClicked="#ClicEliminarArchivo" text="Eliminar archivo" />
                                     <Text fx:id="successText" strokeType="OUTSIDE" strokeWidth="0.0" wrappingWidth="463.0" />
                                  </children>
                                  <VBox.margin>

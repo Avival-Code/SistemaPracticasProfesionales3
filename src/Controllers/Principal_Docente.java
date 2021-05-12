@@ -1,7 +1,7 @@
 /*
  * Autor: Dan Javier Olvera Villeda
  * Versión: 1.0
- * Fecha Creación: 31 - mar - 2021
+ * Fecha Creación: 30 - mar - 2021
  * Descripción:
  * Clase encargada de manejar los eventos de la pantalla
  * Principal_Docente.
@@ -10,11 +10,7 @@ package Controllers;
 
 import Database.ArchivoConsultaDAO;
 import Database.EstudianteDAO;
-import Entities.ArchivoConsulta;
-import Entities.Estudiante;
-import Entities.Proyecto;
-import Entities.UsuarioUV;
-import Utilities.LoginSession;
+import Entities.*;
 import Utilities.OutputMessages;
 import Utilities.ScreenChanger;
 import Utilities.SelectionContainer;
@@ -29,6 +25,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
+import Utilities.LoginSession;
 
 import java.io.File;
 import java.net.URL;
@@ -71,11 +68,12 @@ public class Principal_Docente implements Initializable {
     @FXML
     private TableColumn<ArchivoConsulta, String> tcNombreArchivo;
     @FXML
-    private TableColumn<ArchivoConsulta, String> tcDescripcion;
+    private TableColumn<ArchivoConsulta, String> tcTipo;
+    @FXML
+    private TableColumn<ArchivoConsulta, String> tcTamanio;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        //TODO
         SetUsuario();
         RecuperarGrupo();
         RecuperarArchivosConsulta();
@@ -84,9 +82,6 @@ public class Principal_Docente implements Initializable {
         MostrarArchivosSubidos();
     }
 
-    /**
-     * Muestra los archivos subidos por el docente al sistema
-     */
     public void MostrarArchivosSubidos() {
         tbvArchivosSubidos.getItems().clear();
         for (ArchivoConsulta archivoConsulta : archivoConsultas) {
@@ -109,15 +104,15 @@ public class Principal_Docente implements Initializable {
      * van a ser mostrados por cada columna.
      */
     public void ConfigurarColumnasTablas() {
-        //TODO
         //Tabla de grupo
-        tcMatricula.setCellValueFactory(new PropertyValueFactory<>("matricula"));
-        tcNombre.setCellValueFactory(new PropertyValueFactory<>("nombres"));
+        tcMatricula.setCellValueFactory( new PropertyValueFactory<>( "matricula" ) );
+        tcNombre.setCellValueFactory( new PropertyValueFactory<>( "nombres" ) );
         //tcProyectoAsignado.setCellValueFactory( new PropertyValueFactory<>("") );
 
         //Tabla de archivos subidos por el docente
-        tcNombreArchivo.setCellValueFactory(new PropertyValueFactory<>("titulo"));
-        //tcDescripcion.setCellValueFactory( new PropertyValueFactory<>("descripcion") );
+        tcNombreArchivo.setCellValueFactory( new PropertyValueFactory<>( "titulo" ) );
+        tcTipo.setCellValueFactory( new PropertyValueFactory<>( "tipo" ) );
+        tcTamanio.setCellValueFactory( new PropertyValueFactory<>( "tamanio" ) );
     }
 
     /**
@@ -126,14 +121,14 @@ public class Principal_Docente implements Initializable {
      */
     public void RecuperarGrupo() {
         String nrc = LoginSession.GetInstance().GetDocente().GetNrc();
-        grupo = estudianteDAO.ReadByGroup(nrc);
+        grupo = estudianteDAO.ReadStudentsByGroup(nrc);
     }
 
     /**
      * Recupera los archivos de consulta existentes en la base de datos.
      */
     public void RecuperarArchivosConsulta() {
-        archivoConsultas = archivoConsultaDAO.ReadAll();
+        archivoConsultas = archivoConsultaDAO.ReadFilesByDocente( LoginSession.GetInstance().GetDocente().GetNumeroPersonal() );
     }
 
     /**
@@ -172,32 +167,77 @@ public class Principal_Docente implements Initializable {
         }
     }
 
+    /**
+     * Muestra una pantalla exploradora de archivos en la que se seleccionara un documento
+     * que se almacenara en la base de datos como un archivo de consulta
+     * @param mouseEvent evento del mouse que inicia el método
+     */
     public void irPantallaSubirArchivos(MouseEvent mouseEvent) {
         fileChooser.setTitle("Descargando archivo...");
-        File file = getFile(mouseEvent);
+        File file = getFile( mouseEvent );
         if ( file != null ) {
-            if ( archivoValido(file) ) {
-                archivoConsultaDAO.Create(generarArchivoConsulta(file));
-                successText.setText(outputMessages.UploadSuccesful());
+            if( verificarExtension( getTipoArchivo(file) ) ){
+
+                ArchivoConsulta nuevoArchivo = GenerarArchivoConsulta(file);
+
+                if( FileNameDoesNotExist(nuevoArchivo) ){
+                    archivoConsultaDAO.Create(nuevoArchivo);
+                    successText.setText(outputMessages.UploadSuccesful());
+                }
 
                 RecuperarArchivosConsulta();
                 MostrarArchivosSubidos();
+            }else{
+                errorText.setText( outputMessages.InvalidFileExtension() );
             }
         }
     }
 
-    private boolean archivoValido(File file) {
-        boolean esValido = false;
+    /**
+     * Revisa que el nombre del archivo de consulta introducido no exista en la base de datos
+     * @param archivo el archivo que se desea revisar
+     * @return true - si NO existe el nombre en la base de datos<p>
+     *     falso - si existe el nombre en la base de datos
+     */
+    private boolean FileNameDoesNotExist(ArchivoConsulta archivo ) {
+        boolean nombreNoExiste = true;
 
-
-        if (tipoArchivoValido(file)) {
-
+        for( ArchivoConsulta ejemplar : archivoConsultas ) {
+            if( ejemplar.GetNumeroPersonal().equals( archivo.GetNumeroPersonal() ) &&
+                    ejemplar.getTitulo().equals( archivo.getTitulo() ) ) {
+                nombreNoExiste = false;
+                errorText.setText( outputMessages.DocumentNameAlreadyExists() );
+            }
         }
-
-        return esValido;
+        return nombreNoExiste;
     }
 
-    public ArchivoConsulta generarArchivoConsulta(File file) {
+    /**
+     * Verifica que la extension sea la correspondiente a los tipos de archivos validos
+     * @param tipoArchivo cadena de texto que tiene la extension del archivo
+     * @return true - es un archivo del tipo valido, es decir pdf, docx o doc. <p>
+     *     false - es un tipo de archivo no valido, por ejemplo png, exe, jpg
+     */
+    private boolean verificarExtension(String tipoArchivo) {
+        return tipoArchivo.equals("pdf")  || tipoArchivo.equals("docx") || tipoArchivo.equals("doc");
+    }
+
+    /**
+     * Regresa la extension del documento
+     * @return el tipo de documento
+     */
+    public String getTipoArchivo(File archivo){
+        int separador = archivo.getName().lastIndexOf('.');
+        String tipo = (separador == -1) ? "" : archivo.getName().substring(separador + 1);
+        return tipo;
+    }
+
+    /**
+     * Genera una entidad ArchivoConsulta a partir de un File, con el fin de guardarlo en la base de datos
+     * @param file Archivo que sera usado para hacer crear un ArchivoConsulta
+     * @return Archivo consulta que sera guardado en la base de datos
+     */
+    public ArchivoConsulta GenerarArchivoConsulta(File file) {
         ArchivoConsulta archivoConsulta = new ArchivoConsulta();
 
         archivoConsulta.SetTitulo(file.getName());
@@ -214,22 +254,36 @@ public class Principal_Docente implements Initializable {
      * @return una instancia del archivo seleccionado tipo File
      */
     private File getFile(MouseEvent mouseEvent) {
-        return fileChooser.showOpenDialog(((Node) mouseEvent.getSource()).getScene().getWindow());
+        return fileChooser.showOpenDialog( ( (Node)mouseEvent.getSource() ).getScene().getWindow() );
     }
 
-    private boolean tipoArchivoValido(File file) {
-        boolean tipoArchivoValido = false;
-        String nombreArchivoSinExtension = "";
-        //String
-        char[] nombreArchivoConExtension = file.getName().toCharArray();
+    /**
+     *
+     * @param mouseEvent
+     */
+    public void ClicConsultarExpediente( MouseEvent mouseEvent){
+        Estudiante estudianteElegido = (Estudiante) tbvGrupo.getSelectionModel().getSelectedItem();
 
-        for( char caracter : nombreArchivoConExtension ) {
-            nombreArchivoSinExtension += caracter;
-            if( caracter == '.' ){
-
-            }
+        if (estudianteElegido != null) {
+            SelectionContainer.GetInstance().setEstudianteElegido(estudianteElegido);
+            screenChanger.ShowScreenConsultarExpediente(mouseEvent, errorText);
+        } else {
+            errorText.setText(outputMessages.EstudianteNoSeleccionado());
         }
+    }
 
-        return tipoArchivoValido;
+    public void ClicReportarProblema( MouseEvent mouseEvent ){
+        screenChanger.ShowScreenReportarProblema_Docente( mouseEvent, errorText );
+    }
+
+    public void ClicEliminarArchivo(MouseEvent mouseEvent) {
+        ArchivoConsulta archivoEliminar = (ArchivoConsulta) tbvArchivosSubidos.getSelectionModel().getSelectedItem();
+        if( archivoEliminar != null ){
+            archivoConsultaDAO.Delete( archivoEliminar.GetId() );
+            successText.setText( outputMessages.DeleteFileSucceded() );
+
+            RecuperarArchivosConsulta();
+            MostrarArchivosSubidos();
+        }
     }
 }
