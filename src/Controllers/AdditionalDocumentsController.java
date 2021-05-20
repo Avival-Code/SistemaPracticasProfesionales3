@@ -272,7 +272,7 @@ public class AdditionalDocumentsController implements Initializable {
     private Documento GetDocument( File documentFile ) {
         LocalDate currentDate = LocalDate.now();
         documento = new Documento( 0 , documentFile.getName(), documentFile, currentDate.toString(),
-                GetUserExpediente().GetClave() );
+                GetUserExpediente().GetClave(), "", 0.0f );
         return documento;
     }
 
